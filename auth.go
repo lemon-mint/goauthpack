@@ -1,7 +1,9 @@
 package goauthpack
 
 import (
+	"bytes"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"io"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 )
 
 const recommendedAlgorithm = 0
+const minimumRequirement = 0
 
 func hashpass(data, salt []byte, version int) []byte {
 	if version == 0 {
@@ -37,5 +40,23 @@ func verifyAuthString(AuthString string, password string) (success bool, updateR
 	if err != nil {
 		return false, false, 0
 	}
-	return true, true, version
+	salt, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return false, false, version
+	}
+	hash, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil {
+		return false, false, version
+	}
+	passwordHash := hashpass([]byte(password), salt, version)
+	if subtle.ConstantTimeCompare(hash, passwordHash) != 1 {
+		return false, false, version
+	}
+	if bytes.Compare(hash, passwordHash) == 1 {
+		return false, false, version
+	}
+	if version < minimumRequirement {
+		return true, true, version
+	}
+	return true, false, version
 }
