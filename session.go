@@ -2,6 +2,7 @@ package goauthpack
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/lemon-mint/macaronsign"
@@ -45,4 +46,21 @@ func NewSession(UserName string, Data map[string]string) (string, error) {
 		return "", err
 	}
 	return globalSigner.SignAndEncrypt(jsondata), nil
+}
+
+//ErrInvaild :Errors that occur when the session is invalid
+var ErrInvaild error = errors.New("invalid Session")
+
+//ReadSession : Verify the session
+func ReadSession(session string) (UserName string, Data map[string]string, err error) {
+	jsondata, err := globalSigner.DecryptAndVerify(session)
+	if err != nil {
+		return "", nil, ErrInvaild
+	}
+	s := new(Session)
+	err = json.Unmarshal([]byte(jsondata), s)
+	if err != nil {
+		return "", nil, ErrInvaild
+	}
+	return s.UserName, s.Data, nil
 }
