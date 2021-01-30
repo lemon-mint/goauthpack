@@ -60,3 +60,9 @@ func verifyAuthString(AuthString string, password string) (success bool, updateR
 	}
 	return true, false, version
 }
+
+func makeRandString(size int) string {
+	buf := make([]byte, size)
+	io.ReadFull(rand.Reader, buf)
+	return base64.RawURLEncoding.EncodeToString(buf)
+}
